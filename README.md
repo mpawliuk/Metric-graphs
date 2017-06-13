@@ -1,21 +1,25 @@
 # Metric-graphs
 
-graph_completer.sagews is sage code that goes along with the following mathematical paper:
+This README is written for humans. Specifically it is written for humans who aren't great at Python/Sage. The code is very user friendly.
+
+graph_completer.sagews is Sage code that goes along with the following mathematical paper:
 "Metric graphs and their Ramsey completions" (or something like that) by the 2016 Prague Ramsey Doccourse group.
+
+You can compile it online, for example, at the free website:
+
+    https://cocalc.com/
 
 # Using the completer
 
 The major function is:
 
-    complete_partial_graph(graph, parameters, display_all_steps)
+    complete_partial_graph(graph, parameters)
 
 'graph' is any graph without loops or multiedges with integer labels between 1 and delta.
 
 'parameters' is a list of the form: 
 
     [delta, C, Cmax, K1, K2, ... ]
-
-'display_all_steps' is True or False and prints all of the steps in the algorithm or not.
 
 # Preloaded graphs and parameters
 
@@ -40,6 +44,16 @@ To make you life even easier you can just choose numbers 0 < n < 15 and 0<m<19 a
     [line 876] sample_graph_number = m  
 
 Then uncomment (i.e. remove the # from) line 906.
+
+# Show me more steps!
+
+By default, the completer will not show steps, but you can add optional arguments to show more:
+
+    complete_partial_graph(graph, parameters, display_all_steps, display_recursive_steps)
+
+'display_all_steps' is True or False. It prints all of the steps in the algorithm or not. It will not show you the steps where the algorithm calls itself to complete connected components.
+
+'display_recursive_steps' is True or False. It prints the recursive steps that 'display_all_steps' passes over. Now you see everything!
 
 # What is the rest of the code?
 
@@ -83,8 +97,21 @@ The code is divided into sections based on topic.
 
 8.1 The choice of parameters
 
+Either input your own parameters, or choose an with 0 < n < 19 for pre-loaded parameters. (I suggest trying n = 15.)
+
 8.2 The choice of graph
+
+Either input your own graph, or choose an with 0 < m < 15 for pre-loaded parameters. (I suggest trying m = 1.)
 
 8.3 Choose whether to display all steps
 
+The defaults are:
+
+    display_all_steps = True
+    display_recursive_steps = True
+
+Set these to be False if you want less stuff displayed.
+
 8.4 The function call
+
+Uncomment this line (i.e. remove the \# ) and you're good to go!
