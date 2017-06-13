@@ -41,9 +41,9 @@ The preloaded parameters and graphs contain all the ones mentioned in the body o
 To make you life even easier you can just choose numbers 0 < n < 15 and 0<m<19 and adjust the following lines of the code:
 
     [line 870] parameters_start = parameters_sample[n]
-    [line 876] sample_graph_number = m  
+    [line 878] sample_graph_number = m  
 
-Then uncomment (i.e. remove the # from) line 906.
+Then uncomment (i.e. remove the # from) line 891.
 
 # Show me more steps!
 
