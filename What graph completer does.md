@@ -16,7 +16,7 @@ We look at one antipode from each pair and complete this pode using smaller para
 
 ### 1.3. Make antipodally symmetric if needed.
 
-Extend the edges given in 1.2 to full antipodal quadruples.
+Extend the edges given in 1.2 to full antipodal quadruples. (This only happens if edges were added in step 1.2.)
 
 ## 2. Deal with bipartite stuff.
 
