@@ -56,10 +56,10 @@ def what_case(parameters):
     --"even" in [True, False]
     --"odd" in [True, False]
     --"subcase" in ["3 constrained", "Bipartite 3 contrained", 1,2,3,4]
-    ----1. antipodal classes in Case (IIA) with even δ (Corollary 7.5),
-    ----2. antipodal bipartite classes in Case (I) with odd δ (Corollary 7.7),
-    ----3. antipodal classes in Case (IIA) with odd δ (Theorem 7.4), and
-    ----4. antipodal bipartite classes in Case (I) with even δ (Theorem 7.6).
+    ----1. antipodal classes in Case (IIA) with even d (Corollary 7.5),
+    ----2. antipodal bipartite classes in Case (I) with odd d (Corollary 7.7),
+    ----3. antipodal classes in Case (IIA) with odd d (Theorem 7.4), and
+    ----4. antipodal bipartite classes in Case (I) with even d (Theorem 7.6).
     """
     delta, C, Cmax, K1, K2 = parameters[0:5]
     delta_parity = delta % 2
@@ -216,6 +216,10 @@ def contains_forbidden_triangles(graph, parameters):
                 if sorted([lab1, lab2, lab3]) in forb:
                     return ((i,j,k), sorted([lab1, lab2, lab3]))
     return False
+
+def is_complete(graph):
+    """Check if a labelled grpah is complete."""
+    return not graph.complement().edges(labels=False)
 
 ####################
 ### 3. For forks ###
@@ -445,48 +449,12 @@ def bipartite_connect(graph, parameters):
 
 def bipartite_final_step(graph, parameters,x,y):
     """Add M or M+1 depending on if d+(x,y) = M mod 2."""
-    case_info = what_case(parameters)
     M = min_magic_number(parameters)
-    components = graph.connected_components_subgraphs()
     dplus = graph.shortest_path_length(x,y,by_weight=True, weight_function=lambda edge: int(edge[2]))
 
-    if not(case_info['subcase'] == 4):
-        # Use definition 6.2
-        fix = (M+dplus)%2 #You add M or M+1
-        graph.add_edge((x,y,str(M+fix)))
-    else:
-        # Use definition 7.6
-        if (M % 2 == 0):
-            P = antipodal_partition(graph, parameters)
-            if (dplus % 2) == (M % 2):
-                graph.add_edge((x,y,str(M)))
-            elif (x in P) == (y in P):
-                graph.add_edge((x,y,str(M+1)))
-            else:
-                graph.add_edge((x,y,str(M-1)))
-        else:
-            # M odd
-            P = antipodal_partition(graph, parameters)
-            if (x in P) == (y in P):
-                graph.add_edge((x,y,str(M-1)))
-            elif (dplus % 2) == 0:
-                graph.add_edge((x,y,str(M+1)))
-            else:
-                graph.add_edge((x,y,str(M)))
-    return graph
-
-def subcase_3_final_step(graph, parameters,x,y):
-    """Add M and M+1 depending on an antipodal partition P.
-
-    Use definition 7.5
-    """
-    P = antipodal_partition(graph, parameters)
-    M = min_magic_number(parameters)
-
-    if (x in P) == (y in P):
-        graph.add_edge((x,y,str(M)))
-    else:
-        graph.add_edge((x,y,str(M+1)))
+    # Use definition 6.2
+    fix = (M+dplus)%2 #You add M or M+1
+    graph.add_edge((x,y,str(M+fix)))
     return graph
 
 #######################
@@ -516,7 +484,7 @@ def display_highlighted_edges(graph, delta, edge_label):
 ### 6. The major function ###
 #############################
 
-def complete_partial_graph(G_input, parameters, display_all_steps=False):
+def complete_partial_graph(G_input, parameters, display_all_steps=False, display_recursive_steps=False):
     """Return the completed graph, subject to the parameters.
 
     1. Deal with Antipodal stuff.
@@ -536,8 +504,6 @@ def complete_partial_graph(G_input, parameters, display_all_steps=False):
     delta_parity = parameters[0]%2
     case_info = what_case(parameters)
     M = min_magic_number(parameters)
-    # These are the colours of edges
-    d = {str(i):rainbow(delta + 1)[i] for i in range(1, delta + 1)}
 
     if display_all_steps and not is_delta_graph(G_input, parameters):
         print "The input graph has labels larger than ", delta, ". It will not run."
@@ -552,9 +518,8 @@ def complete_partial_graph(G_input, parameters, display_all_steps=False):
         # 1.1 Make the graph antipodally symmetric as in Defn 7.4
         G_output = make_antipodally_symmetric(G_output, parameters)
 
-        # Print stuff
         if display_all_steps and G_output != G_input:
-            print "Make graph antipodally symmetric:"
+            print "1.1 Make graph antipodally symmetric:"
             display_highlighted_edges(G_output, delta, str(delta))
         elif display_all_steps:
             print "Graph is already antipodally symmetric."
@@ -565,13 +530,21 @@ def complete_partial_graph(G_input, parameters, display_all_steps=False):
         # Reduce delta.
         partition_parameters[0] = parameters[0] - 1
         if case_info['subcase'] in (2,4):
-            # If bipartite, reduce C to stay bipartite
+            # If also bipartite, reduce C to stay bipartite
             partition_parameters[1] = parameters[1] - 2
         # Add the completion of one of the parts.
-        G_output = G_output.union(complete_partial_graph(G_output.subgraph(P), partition_parameters))
+        if display_all_steps:
+            print "1.2 Complete the pode", P
+        G_output = G_output.union(complete_partial_graph(G_output.subgraph(P), partition_parameters, \
+                                                         display_all_steps, display_recursive_steps))
+        if display_all_steps:
+            display_highlighted_edges(G_output, delta, str(delta))
 
         # 1.3. Make it antipodally symmetric
         G_output = make_antipodally_symmetric(G_output, parameters)
+        if display_all_steps:
+            print "1.3 Make graph antipodally symmetric:"
+            display_highlighted_edges(G_output, delta, str(delta))
     ##################################################
     ### 2.1. Complete each component of bipartite. ###
     ### 2.2. Bipartite connect.                    ###
@@ -579,27 +552,32 @@ def complete_partial_graph(G_input, parameters, display_all_steps=False):
     ##################################################
     if case_info['bipartite'] and (not G_output.is_connected()):
         G_output_real = copy(G_output)
-        # 2.1. Complete the individual components
-        for comp in G_output.connected_components_subgraphs():
-            for edge in complete_partial_graph(comp, parameters, False).edges():
-                if edge not in G_output_real:
-                    G_output_real.add_edge(edge)
 
-        # 2.2. Now connect the parts as in Lemma 6.2, if not subcase 4
+        # 2.1. Complete the individual components
+        if display_all_steps:
+            print "2.1 Individual components will be completed."
+        for comp in G_output.connected_components_subgraphs():
+            G_output_real = G_output_real.union(complete_partial_graph(comp, parameters, display_recursive_steps))
+        if display_all_steps:
+            display_highlighted_edges(G_output_real, delta, str(delta))
+
+        # 2.2. Now connect the parts as in Lemma 6.2
         G_output_real = bipartite_connect(G_output_real, parameters)
+        if display_all_steps:
+            print "2.2 Disconnected components were connected."
+            display_highlighted_edges(G_output_real, delta, str(delta))
 
         # 2.3. Antipodally close again.
         if case_info['subcase'] == 4:
             G_output_real = make_antipodally_symmetric(G_output_real,parameters)
-        #Print stuff.
-        if display_all_steps:
-            print "Disconnected components were connected."
-            display_highlighted_edges(G_output, delta, str(delta))
-        if not G_output.complement().edges(labels=False):
-            #Everything is complete. Algorithm is finished.
+            if display_all_steps:
+                print "2.3 Disconnected components were connected."
+                display_highlighted_edges(G_output_real, delta, str(delta))
+        if is_complete(G_output_real):
             return G_output_real
         else:
-            #This is subcase 4.
+            # This is part of a subcase 4 run.
+            # Once it is antipodally closed it will be complete.
             G_output = G_output_real
 
     ######################################
@@ -624,37 +602,32 @@ def complete_partial_graph(G_input, parameters, display_all_steps=False):
             display_highlighted_edges(G_output, delta, str(t))
         elif display_all_steps:
             print "No edges added with weight: ", t
-    ############################################
-    ### 4. The final step adds M, M-1 or M+1 ###
-    ############################################
+    #######################################
+    ### 4. The final step adds M or M+1 ###
+    #######################################
     for pair_of_vertices in G_output.complement().edges(labels=False):
         x = pair_of_vertices[0]
         y = pair_of_vertices[1]
         if (case_info['subcase'] in ('3 constrained', 1)):
-            # For everything else just add the Magic distance
+            # For every other non-edge add the Magic distance
             G_output.add_edge((x,y,str(M)))
-        elif case_info['bipartite']:
+        else:
+            # Must be bipartite case
             G_output = bipartite_final_step(G_output, parameters,x,y)
-        elif (case_info['subcase'] == 3):
-            # Add M and M+1 depending on the partition P
-            # Use definition 7.5
-            G_output = subcase_3_final_step(G_output, parameters,x,y)
     ##################################
     #### 4.1 Print steps if needed ###
     ##################################
-    if display_all_steps:
+    if display_all_steps and not is_complete(G_output):
         if (case_info['subcase'] in ('3 constrained', 1)):
             print "Add the magic distances " +str(M)+ " to finish."
         elif (case_info['subcase'] in ('Bipartite 3 constrained', 2,3)):
             print "Add the magic distances " +str(M)+ " and " + str(M+1) + " to finish."
-        elif case_info['subcase'] == 4:
-            print "Add the magic distances " +str(M)+ ", and " + str(M-1) + ", " + str(M+1) + " to finish."
     ##############################
     ### Output completed graph ###
     ##############################
     return G_output
 
-def display_graph_completion(G_input, parameters, display_all_steps):
+def display_graph_completion(G_input, parameters, display_all_steps, display_recursive_steps):
     """Print the run of the algorithm."""
     if display_all_steps:
         print "The parameters are:"
@@ -665,23 +638,24 @@ def display_graph_completion(G_input, parameters, display_all_steps):
         print "   K2 = ", parameters[4]
         print "--------------------"
         print "The paramaters are in case: ", what_case(parameters)['case']
+        print "What subcase?", what_case(parameters)['subcase']
         print "bipartite?", what_case(parameters)['bipartite']
         print "antipodal?", what_case(parameters)['antipodal']
         print "Is the diamter delta even?", what_case(parameters)['even']
         print "Is the diamter delta odd?", what_case(parameters)['odd']
-        print "What subcase?", what_case(parameters)['subcase']
         print "--------------------"
         print "Is the starting graph connected?", G_input.is_connected()
         print "--------------------"
-        print "Edges of a given distance will be added in order: ", time_sort(parameters)
-        print "then the magic distance: ", min_magic_number(parameters), "(possibly +- 1)."
-        print "--------------------"
+        if what_case(parameters)['subcase'] == '3 constrained' or what_case(parameters)['subcase'] == 'Bipartite 3 constrained':
+            print "Edges of a given distance will be added in order: ", time_sort(parameters)
+            print "then the magic distance: ", min_magic_number(parameters), "(possibly + 1)."
+            print "--------------------"
 
     print "Here is the starting graph:"
     colours = {str(i):rainbow(parameters[0]+1)[i] for i in range(1,parameters[0]+1)}
     G_input.graphplot(edge_labels=True, color_by_label=colours, layout='circular').show()
 
-    G_complete = complete_partial_graph(G_input, parameters, display_all_steps)
+    G_complete = complete_partial_graph(G_input, parameters, display_all_steps, display_recursive_steps)
 
     if what_case(parameters)['antipodal'] and display_all_steps:
         P = antipodal_partition(G_complete, parameters)
@@ -720,7 +694,7 @@ def test_the_graphs(testing_graphs,testing_parameters):
                     print i, parameters, contains_forbidden_triangles(G, parameters)
     return "All graphs have been checked."
 
-def test_the_graphs_2(testing_parameters):
+def test_the_graphs_2(testing_parameters, extra_vertex=False):
     """Check if all paths of length 2 can be completed using some subset of the sample parameters.
 
     testing_parameters is a sublist of range(1,19)
@@ -729,6 +703,8 @@ def test_the_graphs_2(testing_parameters):
     H = Graph()
     H.add_edge((0,1,"1"))
     H.add_edge((1,2,"1"))
+    if extra_vertex:
+        H.add_vertex(3)
     for k in testing_parameters:
         parameters = parameters_sample[k]
         delta = parameters[0]
@@ -790,6 +766,8 @@ def graph_sample(n, parameters):
     """Return a premade graph (usually) of diameter delta.
 
     n should be chosen in range(1,15)
+    The graphs [1,5,6,7,12,13] usually can't be completed, but the
+    algorithm will try its best.
     """
     delta = parameters[0]
     number_of_vertices = delta + 1
@@ -797,15 +775,16 @@ def graph_sample(n, parameters):
 
     G_sample_0 = Graph(1)
 
-    # This one is a cycle with increasing distances
+    # This one is a cycle with increasing distances and a disjoint point.
+    # Don't expect this to be completed!
     G_sample_1 = Graph()
-    for i in range(1,number_of_vertices+1):
+    for i in range(0,number_of_vertices):
         G_sample_1.add_edge((i,(i+1)%number_of_vertices, str(1 + (i%(number_of_vertices-1)))))
+    G_sample_1.add_vertex(number_of_vertices+1)
 
     # This is a cycle of all 1s with delta many vertices.
-    # It cannot usually be completed into the class, but the algorithm does its best
     G_sample_2 = Graph()
-    for i in range(1,number_of_vertices+1):
+    for i in range(1,number_of_vertices):
         G_sample_2.add_edge((i,(i+1)%number_of_vertices, "1"))
 
     # This is a path of 1s with delta+1 vertices.
@@ -819,12 +798,14 @@ def graph_sample(n, parameters):
         G_sample_4.add_edge((2*i, 2*i + 1, "1"))
 
     # This a 1115 cycle from Figure 6
+    # Don't expect this to be completed!
     G_sample_5 = Graph()
     for i in range(3):
         G_sample_5.add_edge((i, i + 1, "1"))
     G_sample_5.add_edge((3, 0, "5"))
 
     # This a 11555 cycle from Figure 7
+    # Don't expect this to be completed!
     G_sample_6 = Graph()
     for i in range(2):
         G_sample_6.add_edge((i, i + 1, "1"))
@@ -832,6 +813,7 @@ def graph_sample(n, parameters):
         G_sample_6.add_edge((i, (i + 1)%5, "5"))
 
     # This a 122 triangle from Figure 10
+    # Don't expect this to be completed!
     G_sample_7 = Graph()
     G_sample_7.add_edges([(0, 1, "1"), (1, 2, "2"), (2, 0, "2")])
 
@@ -857,12 +839,14 @@ def graph_sample(n, parameters):
     G_sample_11.add_edge((0, 1, str(delta)))
 
     # From Theorem 7.8.3
+    # Don't expect this to be completed!
     G_sample_12 = Graph()
     G_sample_12.add_edge((0, 1, str(delta)))
     G_sample_12.add_edges([(0, 2, str(M)), (1, 3, str(M)), (2, 3, str(M)), (2, 4, str(M)), (3, 4, str(M))])
     G_sample_12.add_edges([(0, 3, str(M+1)), (1, 2, str(M+1))])
 
     # From Theorem 7.8.4
+    # Don't expect this to be completed!
     G_sample_13 = Graph()
     G_sample_13.add_edge((0, 1, str(delta)))
     G_sample_13.add_edges([(1, 2, str(delta // 2)), (0, 2, str(delta // 2))])
@@ -889,7 +873,7 @@ parameters_start = parameters_sample[15]
 ### 8.2 CHOOSE YOUR STARTING GRAPH HERE ###########################################
 ###########################################
 
-sample_graph_number = 11
+sample_graph_number = 1
 
 G_start = graph_sample(sample_graph_number, parameters_start)
 
@@ -898,11 +882,10 @@ G_start = graph_sample(sample_graph_number, parameters_start)
 ############################################################
 
 display_all_steps_start = True
+display_all_recursive_steps_start = True
 
 ###############################
 ### 8.4 The function call ##########################
 ###############################
 
-#display_graph_completion(G_start, parameters_start, display_all_steps_start)
-#test_the_graphs([1,2,3,4,5,8,9,10,11,14],range(1,19))
-#test_the_graphs_2(range(1,19))
+display_graph_completion(G_start, parameters_start, display_all_steps_start, display_all_recursive_steps_start)
