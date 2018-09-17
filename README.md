@@ -3,7 +3,7 @@
 This README is written for humans. Specifically it is written for humans who aren't great at Python/Sage. The code is very user friendly.
 
 graph_completer.sagews is Sage code that goes along with the following mathematical paper:
-"Metric graphs and their Ramsey completions" (or something like that) by the 2016 Prague Ramsey Doccourse group.
+"[Completing graphs to metric spaces](https://arxiv.org/abs/1706.00295)" by the 2016 Prague Ramsey Doccourse group.
 
 You can compile it online, for example, at the free website:
 
