@@ -40,6 +40,6 @@ Once the forks have been dealt with, M or M+1 is added to all remaining non-edge
 
 ### 4.1. Print step 4.
 
-# What happends most of the time
+# What happens most of the time
 
 The 3-constrained case (i.e. non-bipartite, non-antipodal) is the most common. Here only steps 3 and 4 are run.
