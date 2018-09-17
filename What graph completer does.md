@@ -30,7 +30,7 @@ This is just step 3 applied to individual connected components.
 
 Pick a representative from each connected component and add M or M+1 depending on some parity conditions of paths to the representatives.
 
-## 3. Complete forks as perscribed.
+## 3. Complete forks as prescribed.
 
 The bulk of the algorithm is in completing forks at this stage in a prescribed order.
 
